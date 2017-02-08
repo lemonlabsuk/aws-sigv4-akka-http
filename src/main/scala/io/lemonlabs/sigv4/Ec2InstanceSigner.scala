@@ -3,22 +3,23 @@ package io.lemonlabs.sigv4
 import akka.actor.{ActorLogging, ActorRef, ActorSystem, Props, Status}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.{HttpEntity, HttpRequest}
-import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+import akka.pattern.pipe
 import akka.stream.actor.ActorPublisher
 import akka.stream.actor.ActorPublisherMessage.{Cancel, Request}
 import akka.stream.scaladsl.Source
-import akka.util.{ByteString, Timeout}
+import akka.stream.{ActorMaterializer, ActorMaterializerSettings}
+import akka.util.ByteString
 import io.lemonlabs.sigv4.Ec2CredentialsRetriever.UpdateCredentials
+import io.lemonlabs.sigv4.Regions.Region
+import io.lemonlabs.sigv4.Services.Service
 import io.lemonlabs.sigv4.SignatureV4Signer.AwsCredentials
-import spray.json.JsString
+import spray.json.{JsString, _}
 
-import scala.concurrent.duration._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
-import akka.pattern.pipe
-import spray.json._
 
-class Ec2InstanceSigner(val roleName: String, val system: ActorSystem) extends SignatureV4Signer {
+class Ec2InstanceSigner(region: Region, service: Service, roleName: String, system: ActorSystem) extends SignatureV4Signer(region, service) {
   protected val credentials: Source[AwsCredentials, ActorRef] =
     Source.actorPublisher[AwsCredentials](Props(classOf[Ec2CredentialsRetriever], roleName))
 }
